@@ -1,0 +1,127 @@
+!!!albite working
+
+TITLE
+run1
+END
+
+RUNTIME
+time_units         years
+timestep_max       0.001
+time_max	   10
+timestep_init      1.E-10
+time_tolerance     0.01
+hindmarsh          false
+correction_max     10.0
+solver             bicg
+pc                 ilu
+pclevel            5
+database           datacom_F.dbs
+gimrt              true
+graphics           kaleidagraph
+screen_output      10
+debye-huckel       true
+speciation_only    false
+END
+
+OUTPUT
+time_units           years
+spatial_profile      0.1 0.2 0.3 0.4 0.5 1 2 3 4 5 6 7 8 9 10
+time_series_print    all
+time_series_interval 1
+END
+
+TRANSPORT
+distance_units   meters
+time_units       years
+fix_diffusion    0.0
+dispersivity     0.0
+END
+
+FLOW
+time_units       years
+distance_units   meters
+constant_flow    3.15
+END
+
+BOUNDARY_CONDITIONS
+x_begin   initial   Dirichlet
+x_end     initial   flux
+END
+
+DISCRETIZATION
+distance_units   meters
+xzones           315   1
+END
+
+INITIAL_CONDITIONS
+initial     1-315
+END
+
+TEMPERATURE
+set_temperature       10
+temperature_gradient  0.0004761
+END
+
+POROSITY
+porosity_update  true
+fix_porosity 0.2
+END
+
+Condition   initial
+pH                7
+Na+               6.09e-4
+Ca++              8.483e-4
+!Mg++             2e-4
+SiO2(aq)          1.3486e-4
+Al+++             1.112e-6
+!K+               1e-5
+Cl-               1e-4 charge
+!CO2(aq)     CO2(g) 1e-4
+
+Albite 0.8 
+!K-Feldspar 0.25 specific_surface_area 0.01
+!Anorthite 0.1 specific_surface_area 0.5
+!Quartz 0.05 specific_surface_area 0.5
+!Muscovite 0.05 specific_surface_area 1
+!Enstatite 0.03 specific_surface_area 0.1 
+!Kaolinite 0.00 specific_surface_area 1
+!Montmor-Na 0.00 specific_surface_area 1 
+!Montmor-Ca 0.00 specific_surface_area 1
+END
+
+MINERALS
+Albite    
+Kaolinite
+
+!Anorthite   -label default -rate -14 
+!Quartz      -label default -rate -13 
+!Muscovite  -label default -rate -11.4 
+!Enstatite   -label default -rate -14 
+!K-Feldspar  -label default -rate -13.2
+!Montmor-Ca  -label default -rate -20
+!Montmor-Na -label default -rate -20
+END
+
+GASES 
+!CO2(g)
+END
+
+PRIMARY_SPECIES
+H+
+Na+
+!Ca++
+!K+
+Al+++
+!Mg++
+SiO2(aq)
+!CO2(aq)
+END
+
+SECONDARY_SPECIES
+OH-
+!HCO3-
+!CO3--
+END
+
+SURFACE_COMPLEXATION
+END
