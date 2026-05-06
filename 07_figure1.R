@@ -1,23 +1,3 @@
-# =============================================================
-# SCRIPT 07 — Figure 1
-#
-# PANEL A (top): ECDFs of site-median annual silica for each
-#   water year 2000–2024, colored dark purple (2000) to yellow (2024).
-#
-# PANEL B (bottom): CONUS map colored by SMK tau from the peak
-#   rolling 10-water-year window (identified in smk_rolling).
-#
-# INPUT:
-#   - data/wqp_download/wqp_screened_all.rds
-#   - data/smk/smk_rolling.rds
-#   - data/smk/smk_decade_summary.csv
-#   - BasinID.txt (for lat/lon of gage locations)
-#
-# OUTPUT:
-#   - data/figures/figure1.pdf  (7 x 8 inches)
-#   - data/figures/figure1.png
-# =============================================================
-
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -26,7 +6,6 @@ library(lubridate)
 library(patchwork)
 library(maps)
 
-# UPDATE PATH
 BASIN_FILE <- "/Users/u1322101/Library/CloudStorage/OneDrive-UniversityofUtah/Documents_OneDrive/Research Projects/silica_temp/gagesII/Dataset1_BasinID/BasinID.txt"
 WQP_FILE   <- "data/wqp_download/wqp_screened_all.rds"
 SMK_ROLL   <- "data/smk/smk_rolling.rds"
@@ -42,9 +21,7 @@ water_year <- function(date) {
   ifelse(mo >= 10L, yr + 1L, yr)
 }
 
-# -------------------------------------------------------------
-# 1. LOAD GAGE COORDINATES FROM BASIN FILE
-# -------------------------------------------------------------
+
 basins <- read.csv(BASIN_FILE, stringsAsFactors = FALSE, strip.white = TRUE) %>%
   mutate(
     STAID   = str_pad(as.character(STAID), 8, pad = "0"),
@@ -54,10 +31,6 @@ basins <- read.csv(BASIN_FILE, stringsAsFactors = FALSE, strip.white = TRUE) %>%
   ) %>%
   select(site_no, lat, lon)
 
-# -------------------------------------------------------------
-# 2. IDENTIFY PEAK WINDOW FROM ROLLING SMK
-# Peak = window with highest consistency index for Si_mgL
-# -------------------------------------------------------------
 smk_rolling <- readRDS(SMK_ROLL)
 
 si_summary <- smk_rolling %>%
@@ -79,16 +52,10 @@ PEAK_WY_S   <- water_year(PEAK_START + 1)
 PEAK_WY_E   <- water_year(PEAK_END)
 PEAK_LABEL  <- sprintf("WY%d\u2013WY%d", PEAK_WY_S, PEAK_WY_E)
 
-cat(sprintf("Peak window: %s (%s to %s)\n", PEAK_LABEL, PEAK_START, PEAK_END))
 
-# -------------------------------------------------------------
-# 3. LOAD + CLEAN WQP SILICA (water years 2000–2024)
-# -------------------------------------------------------------
-cat("Loading WQP...\n")
-# REPLACE the wqp_raw block in Script 07 with this:
 wqp_raw <- readRDS(WQP_FILE) %>%
   mutate(
-    Date           = as.Date(Activity_StartDate),   # direct parse, no as.numeric()
+    Date           = as.Date(Activity_StartDate),   
     site_no        = str_remove(Location_Identifier, "^USGS-"),
     Result_Measure = suppressWarnings(as.numeric(Result_Measure)),
     char_lower     = tolower(Result_Characteristic)
@@ -110,12 +77,7 @@ wqp_raw <- readRDS(WQP_FILE) %>%
   ) %>%
   filter(!is.na(si_mgL), si_mgL > 0, si_mgL <= 25)
 
-cat("wqp_raw rows:", nrow(wqp_raw), "\n")
-cat("water years:", range(wqp_raw$wy), "\n")
-# -------------------------------------------------------------
-# 4. BUILD ECDF DATA — one ECDF line per water year
-# Site-median annual Si per water year, then ECDF across sites
-# -------------------------------------------------------------
+
 ecdf_dat <- wqp_raw %>%
   group_by(site_no, wy) %>%
   summarise(si_med = median(si_mgL, na.rm = TRUE), .groups = "drop") %>%
@@ -127,9 +89,7 @@ ecdf_dat <- wqp_raw %>%
 cat("ECDF data: ", n_distinct(ecdf_dat$wy), "water years,",
     n_distinct(ecdf_dat$site_no), "sites\n")
 
-# -------------------------------------------------------------
-# 5. BUILD MAP DATA — tau from peak window
-# -------------------------------------------------------------
+
 map_dat <- smk_rolling %>%
   filter(
     variable     == "Si_mgL",
@@ -141,17 +101,9 @@ map_dat <- smk_rolling %>%
   filter(!is.na(lat), !is.na(lon)) %>%
   arrange(abs(tau))   # plot small |tau| first so large values are on top
 
-cat("Map sites:", nrow(map_dat), "\n")
-
-# -------------------------------------------------------------
-# 6. US STATE BOUNDARIES
-# -------------------------------------------------------------
 us_states <- map_data("state")
 
-# -------------------------------------------------------------
-# 7. PANEL A — ECDF (bottom panel in paper = Panel A label)
-# Color: dark purple (WY2000) → yellow (WY2025) via viridis plasma
-# -------------------------------------------------------------
+
 pA <- ggplot(ecdf_dat,
              aes(x = si_med, y = ecdf_y, group = wy, color = wy)) +
 
@@ -184,10 +136,7 @@ pA <- ggplot(ecdf_dat,
     legend.background = element_rect(fill = alpha("white", 0.75), colour = NA)
   )
 
-# -------------------------------------------------------------
-# 8. PANEL B — CONUS MAP (top panel)
-# Tau from peak rolling window; red = increasing, blue = decreasing
-# -------------------------------------------------------------
+
 pB <- ggplot() +
 
   geom_polygon(data = us_states,
@@ -230,10 +179,7 @@ pB <- ggplot() +
     legend.background = element_rect(fill = alpha("white", 0.75), colour = NA)
   )
 
-# -------------------------------------------------------------
-# 9. COMBINE: Panel A (ECDF) top, Panel B (map) bottom
-# (Check your paper layout — in code pA/pB order sets position)
-# -------------------------------------------------------------
+
 fig1 <- (pA / pB +
            plot_layout(heights = c(1, 1.2))) +
   plot_annotation(
@@ -247,6 +193,5 @@ fig1 <- (pA / pB +
 # Save
 ggsave(file.path(FIG_DIR, "figure1.pdf"), fig1, width = 7, height = 8)
 ggsave(file.path(FIG_DIR, "figure1.png"), fig1, width = 7, height = 8, dpi = 300)
-cat("Saved: figure1.pdf / figure1.png\n")
 
 fig1
