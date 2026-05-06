@@ -5,7 +5,6 @@ library(dplyr)
 library(purrr)
 library(stringr)
 library(lubridate)
-stopifnot(requireNamespace("rkt", quietly = TRUE))
 map  <- purrr::map
 walk <- purrr::walk
 
@@ -72,17 +71,16 @@ download_prism_month <- function(year, month, out_dir) {
   return(invisible(NULL))
 }
 
-# Grid of year-months to download
 ym_grid <- expand.grid(year = YEAR_START:YEAR_END, month = 1:12) %>%
   filter(!(year == YEAR_END & month > month(Sys.Date()))) %>%
-  filter(!(year == YEAR_START & month < 10)) %>%   # only need Oct 1999 onward
+  filter(!(year == YEAR_START & month < 10)) %>%   
   arrange(year, month)
 
 cat("Months to download:", nrow(ym_grid), "\n")
 
 walk2(ym_grid$year, ym_grid$month, function(yr, mo) {
   download_prism_month(yr, mo, PRISM_DIR)
-  Sys.sleep(0.3)  # be polite
+  Sys.sleep(0.3)  
 })
 
 
@@ -96,7 +94,7 @@ ws_all <- if (exists("ws_all_combined")) ws_all_combined else readRDS(WS_RDS)
 ws <- ws_all %>%
   mutate(GAGE_ID = str_pad(as.character(GAGE_ID), 8, pad = "0")) %>%
   filter(GAGE_ID %in% smk_sites) %>%
-  st_transform(4326)   # PRISM grids are in WGS84
+  st_transform(4326)   
 
 zip_files <- list.files(PRISM_DIR, pattern = "\\.zip$", full.names = TRUE)
 zip_files <- zip_files[file.size(zip_files) > 10000]
