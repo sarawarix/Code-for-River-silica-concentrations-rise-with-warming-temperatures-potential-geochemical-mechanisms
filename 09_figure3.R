@@ -154,9 +154,6 @@ profiles <- purrr::map_dfr(scenarios, function(scn) {
 profiles_solid  <- profiles %>% filter(temp == "Warming")
 profiles_dashed <- profiles %>% filter(temp == "Constant temperature")
 
-# -----------------------------
-# Panel A: [SiO2(aq)]
-# -----------------------------
 pA <- ggplot() +
   geom_line(
     data = profiles_solid,
@@ -181,14 +178,6 @@ pA <- ggplot() +
   theme_classic(base_size = 13) +
   theme(legend.position = "none")
 
-# -----------------------------
-# Panel B: Saturation Index (same scale; correct grouping; same linetype workaround)
-# -----------------------------
-# clearer differentiation:
-# - color = mineral (2 colors)
-# - linetype = scenario (4 linetypes)
-# - optional: linewidth by process (T vs K) for an extra cue
-
 si_long <- profiles %>%
   select(x_node_m, process, scenario, SI_kaol, SI_alb) %>%
   pivot_longer(c(SI_kaol, SI_alb), names_to = "mineral", values_to = "SI") %>%
@@ -212,39 +201,11 @@ pB <- ggplot(
   geom_hline(yintercept = 0, linewidth = 0.4) +
   geom_line() +
   scale_linewidth_manual(values = c("Thermodynamic Eq." = 0.8, "Kinetic Buffering" = 1.2)) +
-  # if you want specific linetypes per run (optional)
-  # scale_linetype_manual(values = c("run1_T_cT"="solid","run2_T_dT"="dashed","run3_K_cT"="dotdash","run4_K_dT"="twodash")) +
   labs(x = NULL, y = "Saturation index") +
   theme_classic(base_size = 13) +
   theme(legend.position = "right")
 
 
-# -----------------------------
-# Panel C: ΔG (same linetype workaround)
-# -----------------------------
-pC <- ggplot() +
-  geom_line(
-    data = profiles_solid,
-    aes(x = x_node_m, y = dG_kJmol, color = process, group = interaction(process, scenario)),
-    linewidth = 1,
-    linetype = "solid"
-  ) +
-  geom_line(
-    data = profiles_dashed,
-    aes(x = x_node_m, y = dG_kJmol, color = process, group = interaction(process, scenario)),
-    linewidth = 1,
-    linetype = "dashed"
-  ) +
-  #coord_cartesian(ylim = c(-117.5, -110)) +
-  scale_color_manual(values = c("Thermodynamic Eq." = "grey60",
-                                "Kinetic Buffering" = "black")) +
-  labs(x = "Distance (m)", y = expression(Delta*G[comb]~"(kJ/mol)")) +
-  theme_classic(base_size = 13) +
-  theme(legend.position = "none")
-
-# -----------------------------
-# Combine
-# -----------------------------
 (pA / pB) +
   plot_layout(heights = c(1, 1.2, 1))
 
@@ -265,9 +226,7 @@ increase_constant <- thermo_summary %>% filter(temp == "Constant temperature") %
 pct_higher <- (increase_warming - increase_constant) / increase_constant * 100
 
 print(thermo_summary)
-cat("Warming increase is:", round(pct_higher, 1), "% higher\n")
 
-#thermodynamic saturation
 thermo_SI_summary <- si_long %>%
   filter(process == "Thermodynamic Eq.") %>%
   group_by(mineral, scenario) %>%
